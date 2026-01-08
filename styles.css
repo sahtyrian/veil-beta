@@ -1,0 +1,194 @@
+#pauseBtn {
+  display: none;
+}
+
+/* ======= Base Reset ======= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Courier Prime', monospace;
+  background: #000000;
+  color: #00ff88;
+  overflow: hidden;
+}
+
+/* ======= Layout ======= */
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ======= Header ======= */
+header {
+  padding: 20px;
+  background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%);
+  border-bottom: 1px solid #00ff8833;
+  text-align: center;
+}
+
+.veil-logo img {
+  height: 80px;          /* tweak to taste */
+  width: auto;
+  image-rendering: auto;
+}
+.veil-logo img {
+  filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.4));
+}
+.veil-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+h1 {
+  font-size: 2.5em;
+  background: linear-gradient(45deg, #00ff88, #00aaff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+header p {
+  color: #999;
+  font-size: 1.1em;
+}
+
+/* ======= Controls Bar ======= */
+#controls {
+  padding: 15px 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  border-bottom: 1px solid #00ff8833;
+  flex-wrap: wrap;
+}
+
+.upload-btn {
+  position: relative;
+  overflow: hidden;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #00ff88, #00aaff);
+  border: none;
+  border-radius: 5px;
+  color: #000;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+}
+
+#audioInput {
+  position: absolute;
+  left: -9999px;
+}
+
+/* Buttons */
+button {
+  padding: 10px 16px;
+  background: #1a1a2e;
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+button:hover:not(:disabled) {
+  background: #00ff88;
+  color: #000;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Inputs */
+input[type="range"] {
+  accent-color: #00ff88;
+  width: 120px;
+}
+
+#modeSelect {
+  background: #000000;
+  color: #00ff88;
+  border: 1px solid #00ff88;
+  border-radius: 5px;
+  padding: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#modeSelect:hover {
+  background: #00ff88;
+  color: #000;
+}
+
+/* Status Text */
+.status-text {
+  color: #666;
+  font-size: 0.9em;
+  margin-left: 10px;
+}
+
+/* ======= Main Canvas Container ======= */
+#container {
+  flex: 1;
+  position: relative;
+  background: radial-gradient(ellipse at center, #000000 0%, #000000 100%);
+  animation: pulse-bg 8s ease-in-out infinite;
+}
+
+@keyframes pulse-bg {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  #container {
+    animation: none !important;
+  }
+}
+
+/* Canvas */
+#neuralCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ======= Info Box ======= */
+#info {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #00ff8833;
+  max-width: 300px;
+}
+
+#nodeInfo {
+  color: #00ff88;
+  font-size: 1.1em;
+  line-height: 1.4;
+}

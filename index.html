@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>VEIL — Audio Neural Visualizer</title>
+
+  <!-- SEO / Social (optional) -->
+  <meta property="og:title" content="VEIL — Audio Neural Visualizer" />
+  <meta property="og:type" content="website" />
+  <meta property="twitter:card" content="summary_large_image" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <h1 class="veil-logo">
+        <img src="assets/veil_logo.gif" alt="VEIL" />
+      </h1>
+      
+      <p>Virtual Experiential Interactive Landscape</p>
+    </header>
+
+    <!-- Controls -->
+    <div id="controls">
+      <label for="audioInput" class="upload-btn">
+        <input type="file" id="audioInput" accept="audio/*" />
+        Upload Audio
+      </label>
+
+      <input type="range" id="volume" min="0" max="1" value="0.8" step="0.01" />
+      <label for="volume">Volume</label>
+
+      <button id="playBtn" disabled>Play</button>
+      <button id="pauseBtn" disabled>Pause</button>
+      <button id="resetBtn">Reset</button>
+
+      <input type="range" id="sensitivity" min="0.1" max="5" value="1" step="0.1" />
+      <label for="sensitivity">Sensitivity</label>
+
+      <select id="modeSelect">
+        <option value="neuralMap" selected>Neural Map</option>
+        <option value="neuralGalaxy">Neural Galaxy</option>
+      </select>
+      <label for="modeSelect">Mode</label>
+
+      <span id="audioHash" class="status-text">No audio loaded</span>
+    </div>
+
+    <!-- Canvas Container -->
+    <div id="container">
+      <canvas id="neuralCanvas"></canvas>
+      <div id="info">
+        <h3 id="nodeInfo">Click on neurons to explore</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js import map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- Main Script -->
+  <script type="module" src="main.js"></script>
+</body>
+</html>
