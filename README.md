@@ -68,3 +68,11 @@ No server or backend is required.
 
 ## Project Structure
 
+/index.html → Application shell
+/main.js → App orchestration & mode switching
+/AudioTransport.js → Global audio playback engine
+/MapDNA.js → Audio analysis → deterministic data
+/modes/
+├─ NeuralMap.js → Micro-level visualization
+└─ NeuralGalaxy.js → Macro-level visualization
+/styles.css → UI & presentation
