@@ -36,6 +36,15 @@ const shared = {
   transport: null,
 };
 
+function unlockAudioContext() {
+  if (shared.audioContext.state !== 'running') {
+    shared.audioContext.resume();
+  }
+  document.removeEventListener('pointerdown', unlockAudioContext);
+}
+
+document.addEventListener('pointerdown', unlockAudioContext, { once: true });
+
 // --- Audio graph ---
 shared.analyser = shared.audioContext.createAnalyser();
 shared.analyser.fftSize = 256;
