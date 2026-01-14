@@ -25,14 +25,14 @@ body {
 
 /* ======= Header ======= */
 header {
-  padding: 20px;
+  padding: 10px;
   background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%);
   border-bottom: 1px solid #00ff8833;
   text-align: center;
 }
 
 .veil-logo img {
-  height: 80px;          /* tweak to taste */
+  height: 50px;          /* tweak to taste */
   width: auto;
   image-rendering: auto;
 }
