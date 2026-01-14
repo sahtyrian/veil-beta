@@ -47,19 +47,19 @@ header {
 
 
 h1 {
-  font-size: 2.5em;
+  font-size: 2.0em;
   background: linear-gradient(45deg, #00ff88, #00aaff);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: 1px;
 }
 
 header p {
   color: #999;
-  font-size: 1.1em;
+  font-size: 1.0em;
 }
 
 /* ======= Controls Bar ======= */
@@ -80,7 +80,7 @@ header p {
   padding: 10px 20px;
   background: linear-gradient(135deg, #00ff88, #00aaff);
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
   color: #000;
   cursor: pointer;
   font-weight: bold;
