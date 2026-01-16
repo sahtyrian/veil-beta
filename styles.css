@@ -13,7 +13,8 @@ body {
   font-family: 'Courier Prime', monospace;
   background: #000000;
   color: #00ff88;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ======= Layout ======= */
@@ -22,6 +23,12 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+#container {
+  min-height: 800px;
+flex: 1;
+}
+
 
 /* ======= Header ======= */
 header {
