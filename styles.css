@@ -17,20 +17,26 @@ body {
   overflow-x: hidden;
 }
 
+/* ======= Transport HUD ======= */
+#transport {
+  position: sticky;       /* safe default for mobile */
+  top: 0;
+  z-index: 1000;
+  background: #000000;
+}
+
 /* ======= Layout ======= */
 #app {
-  min-height: 100dvh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
 #container {
-  flex: 1;
-  min-height: 60vh;     /* or just delete min-height completely */
-  position: relative;
-  background: radial-gradient(ellipse at center, #000000 0%, #000000 100%);
-  animation: pulse-bg 8s ease-in-out infinite;
+  min-height: 800px;
+flex: 1;
 }
+
 
 /* ======= Header ======= */
 header {
