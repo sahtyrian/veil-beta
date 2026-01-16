@@ -19,10 +19,17 @@ body {
 
 /* ======= Transport HUD ======= */
 #transport {
-  position: sticky;       /* safe default for mobile */
+  position: fixed;
   top: 0;
-  z-index: 1000;
-  background: #000000;
+  left: 0;
+  right: 0;
+
+  z-index: 9999;
+
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(6px);
+
+  pointer-events: auto;
 }
 
 /* ======= Layout ======= */
@@ -33,10 +40,9 @@ body {
 }
 
 #container {
-  min-height: 800px;
-flex: 1;
+  padding-top: 140px; /* match HUD height */
+  min-height: 100vh;
 }
-
 
 /* ======= Header ======= */
 header {
