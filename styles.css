@@ -31,6 +31,24 @@ body {
   pointer-events: auto;
 }
 
+/* ======= Transport Polish ======= */
+#transport {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+#transport.playing {
+  opacity: 0.85;
+  transform: scale(0.98);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+}
+
+#transport:hover {
+  opacity: 1;
+  transform: scale(1);
+}
 /* ======= Layout ======= */
 #app {
   min-height: 100vh;
