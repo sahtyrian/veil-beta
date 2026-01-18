@@ -17,19 +17,32 @@ body {
   overflow-x: hidden;
 }
 
+/* ======= Transport HUD (PINNED) ======= */
+#transport {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(6px);
+
+  pointer-events: auto;
+}
+
 /* ======= Layout ======= */
 #app {
-  min-height: 100dvh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
+/* IMPORTANT: canvas space accounts for HUD */
 #container {
+  padding-top: 140px; /* must match HUD height */
   flex: 1;
-  min-height: 60vh;     /* or just delete min-height completely */
   position: relative;
-  background: radial-gradient(ellipse at center, #000000 0%, #000000 100%);
-  animation: pulse-bg 8s ease-in-out infinite;
 }
 
 /* ======= Header ======= */
@@ -53,7 +66,6 @@ header {
   justify-content: center;
   align-items: center;
 }
-
 
 h1 {
   font-size: 2.0em;
@@ -86,7 +98,7 @@ header p {
 .upload-btn {
   position: relative;
   overflow: hidden;
-  padding: 10px 20px;
+  padding: 5px 20px;
   background: linear-gradient(135deg, #00ff88, #00aaff);
   border: none;
   border-radius: 4px;
@@ -108,7 +120,7 @@ header p {
 
 /* Buttons */
 button {
-  padding: 10px 16px;
+  padding: 5px 16px;
   background: #1a1a2e;
   border: 1px solid #00ff88;
   color: #00ff88;
@@ -139,7 +151,7 @@ input[type="range"] {
   color: #00ff88;
   border: 1px solid #00ff88;
   border-radius: 5px;
-  padding: 8px;
+  padding: 5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
