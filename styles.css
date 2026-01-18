@@ -17,20 +17,42 @@ body {
   overflow-x: hidden;
 }
 
-/* ======= Transport HUD (PINNED) ======= */
 #transport {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 16px;
+  right: 16px;
+
   z-index: 9999;
 
   background: rgba(0, 0, 0, 0.92);
   backdrop-filter: blur(6px);
 
+  border: 1px solid #00ff8833;
+  border-radius: 12px;
+  padding: 12px 14px;
+
+  max-width: calc(100vw - 32px);
   pointer-events: auto;
 }
 
+/* ======= Transport Polish ======= */
+#transport {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+#transport.playing {
+  opacity: 0.85;
+  transform: scale(0.98);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+}
+
+#transport:hover {
+  opacity: 1;
+  transform: scale(1);
+}
 /* ======= Layout ======= */
 #app {
   min-height: 100vh;
@@ -40,7 +62,6 @@ body {
 
 /* IMPORTANT: canvas space accounts for HUD */
 #container {
-  padding-top: 140px; /* must match HUD height */
   flex: 1;
   position: relative;
 }
