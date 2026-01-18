@@ -17,42 +17,20 @@ body {
   overflow-x: hidden;
 }
 
+/* ======= Transport HUD (PINNED) ======= */
 #transport {
   position: fixed;
-  top: 16px;
-  right: 16px;
-
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 9999;
 
   background: rgba(0, 0, 0, 0.92);
   backdrop-filter: blur(6px);
 
-  border: 1px solid #00ff8833;
-  border-radius: 12px;
-  padding: 12px 14px;
-
-  max-width: calc(100vw - 32px);
   pointer-events: auto;
 }
 
-/* ======= Transport Polish ======= */
-#transport {
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
-}
-
-#transport.playing {
-  opacity: 0.85;
-  transform: scale(0.98);
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
-}
-
-#transport:hover {
-  opacity: 1;
-  transform: scale(1);
-}
 /* ======= Layout ======= */
 #app {
   min-height: 100vh;
@@ -62,6 +40,7 @@ body {
 
 /* IMPORTANT: canvas space accounts for HUD */
 #container {
+  padding-top: 140px; /* must match HUD height */
   flex: 1;
   position: relative;
 }
@@ -89,7 +68,7 @@ header {
 }
 
 h1 {
-  font-size: 2.0em;
+  font-size: 0.75em;
   background: linear-gradient(45deg, #00ff88, #00aaff);
   background-clip: text;
   -webkit-background-clip: text;
@@ -101,12 +80,12 @@ h1 {
 
 header p {
   color: #999;
-  font-size: 1.0em;
+  font-size: 0.75em;
 }
 
 /* ======= Controls Bar ======= */
 #controls {
-  padding: 15px 20px;
+  padding: 10px 15px;
   display: flex;
   gap: 16px;
   align-items: center;
@@ -186,7 +165,7 @@ input[type="range"] {
 /* Status Text */
 .status-text {
   color: #666;
-  font-size: 0.9em;
+  font-size: 0.75em;
   margin-left: 10px;
 }
 
@@ -231,6 +210,6 @@ input[type="range"] {
 
 #nodeInfo {
   color: #00ff88;
-  font-size: 1.1em;
+  font-size: 0.75em;
   line-height: 1.4;
 }
