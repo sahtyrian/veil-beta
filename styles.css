@@ -9,6 +9,8 @@
   box-sizing: border-box;
 }
 
+:root { --hudH: 140px; }
+
 body {
   font-family: 'Courier Prime', monospace;
   background: #000000;
@@ -31,36 +33,11 @@ body {
   pointer-events: auto;
 }
 
-/* ======= Transport Polish ======= */
-#transport {
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
-}
-
-#transport.playing {
-  opacity: 0.85;
-  transform: scale(0.98);
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
-}
-
-#transport:hover {
-  opacity: 1;
-  transform: scale(1);
-}
 /* ======= Layout ======= */
 #app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-/* IMPORTANT: canvas space accounts for HUD */
-#container {
-  padding-top: 140px; /* must match HUD height */
-  flex: 1;
-  position: relative;
 }
 
 /* ======= Header ======= */
@@ -189,6 +166,7 @@ input[type="range"] {
 
 /* ======= Main Canvas Container ======= */
 #container {
+  padding-top: var(--hudH);
   flex: 1;
   position: relative;
   background: radial-gradient(ellipse at center, #000000 0%, #000000 100%);
@@ -230,4 +208,69 @@ input[type="range"] {
   color: #00ff88;
   font-size: 0.75em;
   line-height: 1.4;
+}
+
+/* ======= Mobile Consolidation ======= */
+@media (max-width: 520px) {
+
+  /* 🔑 Define HUD height for mobile */
+  :root {
+    --hudH: 118px;
+  }
+
+  /* Make the HUD tighter */
+  #transport header {
+    padding: 6px 8px;
+  }
+
+  .veil-logo img {
+    height: 34px;
+  }
+
+  header p {
+    font-size: 0.65em;
+    line-height: 1.1;
+  }
+
+  /* Controls: smaller + tighter + less wrap chaos */
+  #controls {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  button,
+  #modeSelect,
+  .upload-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 400;
+    border-radius: 6px;
+  }
+
+  /* Sliders: shrink hard */
+  input[type="range"] {
+    width: 86px;
+  }
+
+  .status-text {
+    font-size: 11px;
+    margin-left: 0;
+    opacity: 0.8;
+  }
+
+  /* Force controls into a compact “two-row” vibe instead of free-for-all wrap */
+  #controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    justify-items: center;
+  }
+
+  /* Make these span both columns (full width) */
+  .upload-btn,
+  .status-text {
+    grid-column: 1 / -1;
+    justify-self: center;
+    text-align: center;
+  }
 }
