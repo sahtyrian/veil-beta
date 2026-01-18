@@ -90,6 +90,11 @@ header p {
   flex-wrap: wrap;
 }
 
+#controls label {
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
 .upload-btn {
   position: relative;
   overflow: hidden;
@@ -125,6 +130,10 @@ button {
   transition: all 0.3s;
 }
 
+button {
+  font-size: 0.75em;
+}
+
 button:hover:not(:disabled) {
   background: #00ff88;
   color: #000;
@@ -150,6 +159,10 @@ input[type="range"] {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+#modeSelect {
+  font-size: 0.75em;
 }
 
 #modeSelect:hover {
@@ -238,14 +251,23 @@ input[type="range"] {
     gap: 8px;
   }
 
+  #controls label {
+    font-size: 11px;
+    opacity: 0.7;
+  }  
+
   button,
   #modeSelect,
   .upload-btn {
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 400;
     border-radius: 6px;
   }
+
+  #modeSelect {
+    font-size: 11px;
+  }  
 
   /* Sliders: shrink hard */
   input[type="range"] {
