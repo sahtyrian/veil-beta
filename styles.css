@@ -91,7 +91,7 @@ header p {
 }
 
 #controls label {
-  font-size: 0.50em;
+  font-size: 0.75em;
   opacity: 0.8;
 }
 
@@ -203,18 +203,20 @@ input[type="range"] {
   width: 100%;
   height: 100%;
   display: block;
+  position: relative; /* ← ADD THIS */
 }
 
 /* ======= Info Box ======= */
 #info {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: calc(var(--hudH) + 20px);
+  right: 0px;
   background: rgba(0, 0, 0, 0.8);
-  padding: 20px;
+  padding: 10px;
   border-radius: 10px;
   border: 1px solid #00ff8833;
   max-width: 300px;
+  z-index: 9998;
 }
 
 #nodeInfo {
@@ -222,6 +224,19 @@ input[type="range"] {
   font-size: 0.75em;
   line-height: 1.4;
 }
+
+.fs-fab{
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 10000;
+  padding: 10px 12px;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+#transport { z-index: 9999; }
+.fs-fab { z-index: 10001; }
 
 /* ======= Mobile Consolidation ======= */
 @media (max-width: 520px) {
@@ -279,20 +294,41 @@ input[type="range"] {
     margin-left: 0;
     opacity: 0.8;
   }
-
-  /* Force controls into a compact “two-row” vibe instead of free-for-all wrap */
-  #controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
-    justify-items: center;
+  @media (max-width: 520px) {
+    :root { --hudH: 118px; }
+  
+    #controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 12px;           /* row gap, column gap */
+      justify-content:center;  /* centered, fluid */
+      align-items:center;
+      padding: 8px 10px;
+    }
+  
+    /* Make labels smaller (Volume / Sensitivity / Mode) */
+    #controls label{
+      font-size: 11px;
+      opacity: 0.85;
+    }
+  
+    button, #modeSelect, .upload-btn{
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 400;
+      border-radius: 6px;
+    }
+  
+    input[type="range"]{ width: 96px; }
+  
+    .status-text{
+      width: 100%;
+      text-align:center;
+      font-size: 11px;
+      margin-left: 0;
+      opacity: 0.8;
+    }
   }
-
-  /* Make these span both columns (full width) */
-  .upload-btn,
-  .status-text {
-    grid-column: 1 / -1;
-    justify-self: center;
-    text-align: center;
-  }
+  
 }
+
