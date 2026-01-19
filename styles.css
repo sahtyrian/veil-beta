@@ -262,8 +262,8 @@ input[type="range"] {
 
   /* Controls: smaller + tighter + less wrap chaos */
   #controls {
-    padding: 8px 10px;
-    gap: 8px;
+    padding: 2px 4px;
+    gap: 2px;
   }
 
   #controls label {
