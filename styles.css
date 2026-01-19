@@ -300,10 +300,6 @@ input[type="range"] {
     #controls{
       display:flex;
       flex-wrap:wrap;
-      gap:10px 12px;           /* row gap, column gap */
-      justify-content:center;  /* centered, fluid */
-      align-items:center;
-      padding: 8px 10px;
     }
   
     /* Make labels smaller (Volume / Sensitivity / Mode) */
