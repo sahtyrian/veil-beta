@@ -1,19 +1,13 @@
-#pauseBtn {
-  display: none;
-}
+#pauseBtn { display: none; }
 
 /* ======= Base Reset ======= */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root { --hudH: 140px; }
 
 body {
   font-family: 'Courier Prime', monospace;
-  background: #000000;
+  background: #000;
   color: #00ff88;
   overflow-y: auto;
   overflow-x: hidden;
@@ -48,18 +42,17 @@ header {
   text-align: center;
 }
 
-.veil-logo img {
-  height: 50px;          /* tweak to taste */
-  width: auto;
-  image-rendering: auto;
-}
-.veil-logo img {
-  filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.4));
-}
 .veil-logo {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.veil-logo img {
+  height: 50px;
+  width: auto;
+  image-rendering: auto;
+  filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.4));
 }
 
 h1 {
@@ -84,9 +77,11 @@ header p {
   display: flex;
   gap: 4px;
   align-items: center;
-  background: #000000;
+  background: #000;
   border-bottom: 1px solid #00ff8833;
   flex-wrap: wrap;
+  justify-content: center;
+
 }
 
 #controls label {
@@ -126,11 +121,8 @@ button {
   border-radius: 5px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s;
-}
-
-button {
   font-size: 0.75em;
+  transition: all 0.3s;
 }
 
 button:hover:not(:disabled) {
@@ -150,18 +142,15 @@ input[type="range"] {
 }
 
 #modeSelect {
-  background: #000000;
+  background: #000;
   color: #00ff88;
   border: 1px solid #00ff88;
   border-radius: 5px;
   padding: 5px;
   font-weight: 600;
+  font-size: 0.75em;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-#modeSelect {
-  font-size: 0.75em;
 }
 
 #modeSelect:hover {
@@ -181,7 +170,7 @@ input[type="range"] {
   padding-top: var(--hudH);
   flex: 1;
   position: relative;
-  background: radial-gradient(ellipse at center, #000000 0%, #000000 100%);
+  background: radial-gradient(ellipse at center, #000 0%, #000 100%);
   animation: pulse-bg 8s ease-in-out infinite;
 }
 
@@ -190,11 +179,8 @@ input[type="range"] {
   50% { filter: brightness(1.2); }
 }
 
-/* Accessibility: reduce motion */
 @media (prefers-reduced-motion: reduce) {
-  #container {
-    animation: none !important;
-  }
+  #container { animation: none !important; }
 }
 
 /* Canvas */
@@ -202,20 +188,21 @@ input[type="range"] {
   width: 100%;
   height: 100%;
   display: block;
-  position: relative; /* ← ADD THIS */
 }
 
 /* ======= Info Box ======= */
 #info {
-  position: absolute;
-  top: calc(var(--hudH) + 20px);
-  right: 0px;
+  position: fixed;                       /* ← key change */
+  top: calc(var(--hudH) + 12px);          /* ← sit below HUD */
+  right: 14px;
+
   background: rgba(0, 0, 0, 0.8);
   padding: 10px;
   border-radius: 10px;
   border: 1px solid #00ff8833;
   max-width: 300px;
-  z-index: 9998;
+
+  z-index: 10002;                         /* ← above HUD + canvas */
 }
 
 #nodeInfo {
@@ -224,51 +211,42 @@ input[type="range"] {
   line-height: 1.4;
 }
 
-.fs-fab{
+/* Fullscreen FAB */
+.fs-fab {
   position: fixed;
   right: 14px;
   bottom: 14px;
-  z-index: 10000;
+  z-index: 10001;
   padding: 10px 12px;
   border-radius: 999px;
   line-height: 1;
 }
 
-#transport { z-index: 9999; }
-.fs-fab { z-index: 10001; }
-
 /* ======= Mobile Consolidation ======= */
 @media (max-width: 520px) {
+  :root { --hudH: 118px; }
 
-  /* 🔑 Define HUD height for mobile */
-  :root {
-    --hudH: 118px;
-  }
+  #transport header { padding: 6px 8px; }
 
-  /* Make the HUD tighter */
-  #transport header {
-    padding: 6px 8px;
-  }
-
-  .veil-logo img {
-    height: 34px;
-  }
+  .veil-logo img { height: 34px; }
 
   header p {
     font-size: 0.65em;
     line-height: 1.1;
   }
 
-  /* Controls: smaller + tighter + less wrap chaos */
   #controls {
     padding: 2px 4px;
     gap: 2px;
+    display: flex;
+    flex-wrap: wrap;
+    
   }
 
   #controls label {
     font-size: 11px;
-    opacity: 0.7;
-  }  
+    opacity: 0.85;
+  }
 
   button,
   #modeSelect,
@@ -279,51 +257,13 @@ input[type="range"] {
     border-radius: 6px;
   }
 
-  #modeSelect {
-    font-size: 11px;
-  }  
-
-  /* Sliders: shrink hard */
-  input[type="range"] {
-    width: 86px;
-  }
+  input[type="range"] { width: 96px; }
 
   .status-text {
+    width: 100%;
+    text-align: center;
     font-size: 11px;
     margin-left: 0;
     opacity: 0.8;
   }
-  @media (max-width: 520px) {
-    :root { --hudH: 118px; }
-  
-    #controls{
-      display:flex;
-      flex-wrap:wrap;
-    }
-  
-    /* Make labels smaller (Volume / Sensitivity / Mode) */
-    #controls label{
-      font-size: 11px;
-      opacity: 0.85;
-    }
-  
-    button, #modeSelect, .upload-btn{
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 400;
-      border-radius: 6px;
-    }
-  
-    input[type="range"]{ width: 96px; }
-  
-    .status-text{
-      width: 100%;
-      text-align:center;
-      font-size: 11px;
-      margin-left: 0;
-      opacity: 0.8;
-    }
-  }
-  
 }
-
