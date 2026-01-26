@@ -294,3 +294,4 @@ function forceResize() {
   window.addEventListener('orientationchange', handle);
   window.addEventListener('resize', handle);
 })();
+
