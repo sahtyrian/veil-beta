@@ -197,3 +197,100 @@ if (modeSelect) {
 loadVisualizer('neuralMap');
 wireFileInput();
 wireTransportButtons();
+
+/* =========================
+   Force Canvas Resize
+========================= */
+function forceResize() {
+  const canvas = document.getElementById('neuralCanvas');
+  if (!canvas) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const w = Math.max(1, Math.floor(rect.width * dpr));
+  const h = Math.max(1, Math.floor(rect.height * dpr));
+
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+
+  if (window.currentVisualizer?.onResize) {
+    window.currentVisualizer.onResize(rect.width, rect.height, dpr);
+  }
+}
+
+/* ================================
+   Fullscreen + Orientation Logic
+   ================================ */
+(function setupFullscreen() {
+  const btn = document.getElementById('fullscreenBtn');
+  if (!btn) return;
+
+  const root = document.documentElement;
+
+  function isFs() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  async function enterFs() {
+    try {
+      if (root.requestFullscreen) return await root.requestFullscreen();
+      if (root.webkitRequestFullscreen) return root.webkitRequestFullscreen();
+    } catch {}
+  }
+
+  async function exitFs() {
+    try {
+      if (document.exitFullscreen) return await document.exitFullscreen();
+      if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+    } catch {}
+  }
+
+  btn.addEventListener('click', async () => {
+    if (isFs()) await exitFs();
+    else await enterFs();
+    window.dispatchEvent(new Event('resize'));
+  });
+
+  function sync() {
+    btn.textContent = isFs() ? '⤡' : '⤢';
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  document.addEventListener('fullscreenchange', sync);
+  document.addEventListener('webkitfullscreenchange', sync);
+})();
+
+/* ================================
+   Auto fullscreen on mobile landscape
+   ================================ */
+(function autoFullscreenOnLandscape() {
+  const root = document.documentElement;
+
+  function isMobile() {
+    return window.matchMedia('(pointer: coarse)').matches;
+  }
+
+  function isLandscape() {
+    return window.matchMedia('(orientation: landscape)').matches;
+  }
+
+  async function tryEnterFs() {
+    try {
+      if (root.requestFullscreen) await root.requestFullscreen();
+      else if (root.webkitRequestFullscreen) root.webkitRequestFullscreen();
+    } catch {}
+  }
+
+  function handle() {
+    if (isMobile() && isLandscape()) {
+      tryEnterFs();
+    }
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  window.addEventListener('orientationchange', handle);
+  window.addEventListener('resize', handle);
+})();
