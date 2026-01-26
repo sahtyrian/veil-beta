@@ -3,25 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>VEIL — Virtual Experiential Interactive Landscape</title>
+  <title>VEIL — Audio Neural Visualizer</title>
 
-  <!-- SEO / Social (optional) -->
-  <meta property="og:title" content="VEIL — Virtual Experiential Interactive Landscape" />
+  <meta property="og:title" content="VEIL — Audio Neural Visualizer" />
   <meta property="og:type" content="website" />
   <meta property="twitter:card" content="summary_large_image" />
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet" />
 
-  <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
-  <div id="app">
-
+    <button id="fullscreenBtn" class="fs-fab" aria-label="Fullscreen">⤢</button>
+    <div id="app">
     <!-- ===== TRANSPORT (Pinned HUD) ===== -->
     <div id="transport">
       <header>
@@ -56,7 +53,6 @@
         <span id="audioHash" class="status-text">No audio loaded</span>
       </div>
     </div>
-    <!-- ✅ CLOSE TRANSPORT -->
 
     <!-- ===== CANVAS AREA ===== -->
     <div id="container">
@@ -69,10 +65,6 @@
 
   </div>
 
-  <!-- importmap + main.js same as you already have -->
-</body>
-
-  <!-- Three.js import map -->
   <script type="importmap">
   {
     "imports": {
@@ -82,7 +74,6 @@
   }
   </script>
 
-  <!-- Main Script -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
