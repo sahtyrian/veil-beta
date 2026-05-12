@@ -11,6 +11,7 @@
 import { AudioTransport } from './AudioTransport.js';
 import { NeuralMap } from './modes/NeuralMap.js';
 import { NeuralGalaxy } from './modes/NeuralGalaxy.js';
+import { NeuralSphere } from './modes/NeuralSphere.js';
 
 const infoBox = document.getElementById('info');
 
@@ -18,6 +19,7 @@ const infoBox = document.getElementById('info');
 const modes = {
   neuralMap: NeuralMap,
   neuralGalaxy: NeuralGalaxy,
+  neuralSphere: NeuralSphere,
 };
 
 let currentVisualizer = null;
@@ -168,7 +170,7 @@ function loadVisualizer(modeName) {
 
   const VisualizerClass = modes[modeName];
   if (!VisualizerClass) return;
-
+ 
   // New mode instance gets shared + lastMapData
   currentVisualizer = new VisualizerClass(shared, lastMapData);
 
@@ -176,11 +178,6 @@ function loadVisualizer(modeName) {
 if (shared.lastAudioBuffer && typeof currentVisualizer.onNewAudio === 'function') {
   currentVisualizer.onNewAudio(shared.lastAudioBuffer);
 }
-
-  // If audio already loaded, hydrate the new mode immediately
-  if (shared.lastAudioBuffer && typeof currentVisualizer.onNewAudio === 'function') {
-    currentVisualizer.onNewAudio(shared.lastAudioBuffer);
-  }
 
   // Rewire controls
   wireFileInput();
@@ -216,8 +213,8 @@ function forceResize() {
     canvas.height = h;
   }
 
-  if (window.currentVisualizer?.onResize) {
-    window.currentVisualizer.onResize(rect.width, rect.height, dpr);
+  if (currentVisualizer?.onResize) {
+    currentVisualizer.onResize(rect.width, rect.height, dpr);
   }
 }
 
@@ -264,6 +261,23 @@ function forceResize() {
 })();
 
 /* ================================
+   Recenter (button + double click)
+   ================================ */
+   (function setupRecenter() {
+    const btn = document.getElementById('recenterBtn');
+    const canvas = document.getElementById('neuralCanvas');
+  
+    function doRecenter(e) {
+      e?.preventDefault?.();
+      if (!currentVisualizer || typeof currentVisualizer.recenter !== 'function') return;
+      requestAnimationFrame(() => currentVisualizer.recenter());
+    }
+  
+    btn?.addEventListener('click', doRecenter);
+    canvas?.addEventListener('dblclick', doRecenter);
+  })();
+
+/* ================================
    Auto fullscreen on mobile landscape
    ================================ */
 (function autoFullscreenOnLandscape() {
@@ -288,10 +302,9 @@ function forceResize() {
     if (isMobile() && isLandscape()) {
       tryEnterFs();
     }
-    window.dispatchEvent(new Event('resize'));
+    forceResize();
   }
 
   window.addEventListener('orientationchange', handle);
   window.addEventListener('resize', handle);
 })();
-
