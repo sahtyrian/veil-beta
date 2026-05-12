@@ -217,9 +217,19 @@ input[type="range"] {
   right: 14px;
   bottom: 14px;
   z-index: 10001;
-  padding: 10px 12px;
-  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  padding: 0;                 /* ← key */
+  border-radius: 50%;         /* ← true circle */
+  display: flex;              /* ← center icon */
+  align-items: center;
+  justify-content: center;
   line-height: 1;
+}
+
+.fs-fab--recenter{
+  right: 58px;  /* sits just left of fullscreen */
+  bottom: 14px;
 }
 
 /* ======= Mobile Consolidation ======= */
@@ -267,4 +277,3 @@ input[type="range"] {
     opacity: 0.8;
   }
 }
-
