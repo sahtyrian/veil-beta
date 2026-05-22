@@ -269,13 +269,46 @@ function forceResize() {
   
     function doRecenter(e) {
       e?.preventDefault?.();
+    
+      console.log('[RECENTER CLICK]', {
+        visualizer: currentVisualizer?.constructor?.name,
+        hasRecenter: typeof currentVisualizer?.recenter
+      });
+    
       if (!currentVisualizer || typeof currentVisualizer.recenter !== 'function') return;
-      requestAnimationFrame(() => currentVisualizer.recenter());
+    
+      requestAnimationFrame(() => {
+        console.log('[RECENTER RUNNING]', currentVisualizer.constructor.name);
+        currentVisualizer.recenter();
+      });
     }
   
     btn?.addEventListener('click', doRecenter);
     canvas?.addEventListener('dblclick', doRecenter);
   })();
+
+  /* ================================
+   Motion Controls
+   ================================ */
+(function setupMotionControls() {
+  const btn = document.getElementById('motionBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    if (
+      currentVisualizer &&
+      typeof currentVisualizer.enableMotionControls === 'function'
+    ) {
+      const enabled = await currentVisualizer.enableMotionControls();
+      btn.textContent = enabled ? 'Motion On' : 'Enable Motion';
+    } else {
+      btn.textContent = 'Neural Sphere Only';
+      setTimeout(() => {
+        btn.textContent = 'Enable Motion';
+      }, 1200);
+    }
+  });
+})();
 
 /* ================================
    Auto fullscreen on mobile landscape

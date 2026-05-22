@@ -10,6 +10,7 @@
 // modes/NeuralSphere.js
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+// import { DeviceOrientationControls } from 'three/addons/controls/DeviceOrientationControls.js';
 
 // VEIL GLOW (Bloom)
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -274,6 +275,10 @@ if (options.enableControls !== false) {
   // Look straight ahead from center
   this.controls.target.set(0, 0, -1);
 }
+
+// Motion controls — optional phone gyro lookaround
+this.motionControls = null;
+this.motionEnabled = false;
 
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.55));
     this.camera.position.set(0, 0, 0);
@@ -1183,11 +1188,89 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
 
   }
 
+  async enableMotionControls() {
+    try {
+      // Lazy import so motion controls cannot break the whole app on startup
+      const mod = await import('three/addons/controls/DeviceOrientationControls.js');
+      const DeviceOrientationControls = mod.DeviceOrientationControls;
+  
+      // iOS requires permission from a direct user gesture
+      if (
+        typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function'
+      ) {
+        const permission = await DeviceOrientationEvent.requestPermission();
+        if (permission !== 'granted') {
+          console.warn('[NeuralSphere] Motion permission denied.');
+          return false;
+        }
+      }
+  
+      this.motionControls = new DeviceOrientationControls(this.camera);
+      this.motionEnabled = true;
+  
+      // Pause touch/orbit controls while motion is active
+      if (this.controls) this.controls.enabled = false;
+  
+      this.camera.position.set(0, 0, 0);
+      this.camera.near = 0.01;
+      this.camera.far = 3000;
+      this.camera.updateProjectionMatrix();
+  
+      return true;
+    } catch (err) {
+      console.warn('[NeuralSphere] Motion controls failed:', err);
+  
+      this.motionEnabled = false;
+      this.motionControls = null;
+  
+      // Fall back to touch controls
+      if (this.controls) this.controls.enabled = true;
+  
+      return false;
+    }
+  }
+  
+  /* async enableMotionControls() {
+    try {
+      // iOS requires permission from a user gesture
+      if (
+        typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function'
+      ) {
+        const permission = await DeviceOrientationEvent.requestPermission();
+        if (permission !== 'granted') return false;
+      }
+  
+      this.motionControls = new DeviceOrientationControls(this.camera);
+      this.motionEnabled = true;
+  
+      // Keep touch controls as fallback, but stop updating them while motion is active
+      if (this.controls) this.controls.enabled = false;
+  
+      this.camera.position.set(0, 0, 0);
+      this.camera.near = 0.01;
+      this.camera.far = 3000;
+      this.camera.updateProjectionMatrix();
+  
+      return true;
+    } catch (err) {
+      console.warn('[NeuralSphere] Motion controls failed:', err);
+      this.motionEnabled = false;
+      if (this.controls) this.controls.enabled = true;
+      return false;
+    }
+  } */
+
   animate() {
     if (!this.isActive) return;
     this.rafId = requestAnimationFrame(() => this.animate());
 
-    if (this.controls) this.controls.update();
+    if (this.motionEnabled && this.motionControls) {
+      this.motionControls.update();
+    } else if (this.controls) {
+      this.controls.update();
+    }
 
     if (this.stars) this.stars.rotation.y += this.cfg.rotation.autoRotateSpeed;
 

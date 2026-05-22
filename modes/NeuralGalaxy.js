@@ -254,12 +254,24 @@ if (infoBox) infoBox.style.display = 'none';
     this.controls = null;
     if (options.enableControls !== false) {
       this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-      this.controls.enableDamping = true;
-      this.controls.dampingFactor = 0.05;
+      // Controls tuning (less twitchy)
+this.controls.enableDamping = true;
+this.controls.dampingFactor = 0.08;
+
+this.controls.zoomSpeed   = 0.30;
+this.controls.rotateSpeed = 0.40;
+this.controls.panSpeed    = 0.50;
+
     }
 
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.55));
     this.camera.position.set(0, 0, this.cfg.camera.startZ);
+    
+    // Save home camera state (for recenter)
+if (this.controls) {
+  this._homeCamPos = this.camera.position.clone();
+  this._homeTarget = this.controls.target.clone();
+}
 
     // VEIL GLOW pipeline
     this.composer = null;
@@ -715,6 +727,8 @@ const y = Math.cos(phi) * R;
     this.starGeometry.setAttribute('color',     new THREE.BufferAttribute(colors, 3));
     this.starGeometry.setAttribute('shapeTier', new THREE.BufferAttribute(shapeTiers, 1));
 
+    this.starGeometry.computeBoundingSphere();
+
     this.starMaterial = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -817,6 +831,8 @@ const y = Math.cos(phi) * R;
 
     this.stars = new THREE.Points(this.starGeometry, this.starMaterial);
     this.scene.add(this.stars);
+    this.recenter();
+
   }
 
   clearStars() {
@@ -1195,4 +1211,35 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
 
     this.renderer.dispose();
   }
+  recenter() {
+    if (!this.starGeometry) return;
+  
+    // Ensure bounds exist
+    if (!this.starGeometry.boundingSphere) this.starGeometry.computeBoundingSphere();
+    const bs = this.starGeometry.boundingSphere;
+    if (!bs) return;
+  
+    const center = bs.center.clone();
+    const radius = Math.max(0.001, bs.radius);
+  
+    // Aim controls at center
+    this.controls.target.copy(center);
+  
+    // Fit camera distance to show entire sphere
+    const fov = (this.camera.fov * Math.PI) / 180;
+    const dist = (radius / Math.sin(fov / 2)) * 1.3;
+  
+    // Place camera “in front” of the galaxy, looking at center
+    this.camera.position.copy(center).add(new THREE.Vector3(0, 0, 1).multiplyScalar(dist));
+  
+    // Good clip planes
+    this.camera.near = Math.max(0.01, dist - radius * 3.0);
+    this.camera.far  = dist + radius * 3.0;
+    this.camera.updateProjectionMatrix();
+  
+    this.controls.minDistance = dist * 0.1;
+this.controls.maxDistance = dist * 3.0;
+this.controls.update();
+  }  
+  
 }

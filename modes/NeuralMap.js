@@ -39,7 +39,16 @@ export class NeuralMap {
     this.camera   = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
+    // Controls tuning (less twitchy)
+this.controls.enableDamping = true;
+this.controls.dampingFactor = 0.08;
+
+this.controls.zoomSpeed   = 0.35;
+this.controls.rotateSpeed = 0.45;
+this.controls.panSpeed    = 0.55;
+
+this.controls.minDistance = 2;
+this.controls.maxDistance = 500;
 
     // Audio
     this.audioBuffer = shared.lastAudioBuffer || null; // <-- hydrate from shared
@@ -334,4 +343,15 @@ this.duration      = 0;   // cached duration of buffer
     });
     this.renderer.dispose();
   }
+
+  recenter() {
+    if (!this.camera || !this.controls) return;
+  
+    // snap back to a known good view
+    this.controls.target.set(0, 0, 0);
+    this.camera.position.set(0, 0, 15);
+  
+    this.controls.update();
+  }
+  
 }
