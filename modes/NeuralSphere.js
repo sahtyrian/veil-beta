@@ -1231,37 +1231,6 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
     }
   }
   
-  /* async enableMotionControls() {
-    try {
-      // iOS requires permission from a user gesture
-      if (
-        typeof DeviceOrientationEvent !== 'undefined' &&
-        typeof DeviceOrientationEvent.requestPermission === 'function'
-      ) {
-        const permission = await DeviceOrientationEvent.requestPermission();
-        if (permission !== 'granted') return false;
-      }
-  
-      this.motionControls = new DeviceOrientationControls(this.camera);
-      this.motionEnabled = true;
-  
-      // Keep touch controls as fallback, but stop updating them while motion is active
-      if (this.controls) this.controls.enabled = false;
-  
-      this.camera.position.set(0, 0, 0);
-      this.camera.near = 0.01;
-      this.camera.far = 3000;
-      this.camera.updateProjectionMatrix();
-  
-      return true;
-    } catch (err) {
-      console.warn('[NeuralSphere] Motion controls failed:', err);
-      this.motionEnabled = false;
-      if (this.controls) this.controls.enabled = true;
-      return false;
-    }
-  } */
-
   animate() {
     if (!this.isActive) return;
     this.rafId = requestAnimationFrame(() => this.animate());
