@@ -1190,26 +1190,22 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
 
   async enableMotionControls() {
     try {
-      // Lazy import so motion controls cannot break the whole app on startup
-      const mod = await import('three/addons/controls/DeviceOrientationControls.js');
-      const DeviceOrientationControls = mod.DeviceOrientationControls;
-  
-      // iOS requires permission from a direct user gesture
+      // iOS requires permission from a direct user tap
       if (
         typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function'
       ) {
         const permission = await DeviceOrientationEvent.requestPermission();
+  
         if (permission !== 'granted') {
           console.warn('[NeuralSphere] Motion permission denied.');
           return false;
         }
       }
   
-      this.motionControls = new DeviceOrientationControls(this.camera);
       this.motionEnabled = true;
   
-      // Pause touch/orbit controls while motion is active
+      // Disable touch controls while gyro is active
       if (this.controls) this.controls.enabled = false;
   
       this.camera.position.set(0, 0, 0);
@@ -1217,14 +1213,31 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
       this.camera.far = 3000;
       this.camera.updateProjectionMatrix();
   
+      // Native phone orientation handler
+      this._onDeviceOrientation = (event) => {
+        if (!this.motionEnabled) return;
+  
+        const alpha = THREE.MathUtils.degToRad(event.alpha || 0); // compass/yaw
+        const beta  = THREE.MathUtils.degToRad(event.beta || 0);  // front-back tilt
+        const gamma = THREE.MathUtils.degToRad(event.gamma || 0); // side tilt
+  
+        // Phone-as-window camera rotation
+        this.camera.rotation.set(
+          beta - Math.PI / 2,
+          alpha,
+          -gamma,
+          'YXZ'
+        );
+      };
+  
+      window.addEventListener('deviceorientation', this._onDeviceOrientation, true);
+  
       return true;
     } catch (err) {
-      console.warn('[NeuralSphere] Motion controls failed:', err);
+      console.warn('[NeuralSphere] Native motion controls failed:', err);
   
       this.motionEnabled = false;
-      this.motionControls = null;
   
-      // Fall back to touch controls
       if (this.controls) this.controls.enabled = true;
   
       return false;
@@ -1272,6 +1285,11 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
     this.renderPass = null;
     this.bloomPass = null;
 
+    if (this._onDeviceOrientation) {
+      window.removeEventListener('deviceorientation', this._onDeviceOrientation, true);
+      this._onDeviceOrientation = null;
+    }
+    
     this.renderer.dispose();
   }
   
