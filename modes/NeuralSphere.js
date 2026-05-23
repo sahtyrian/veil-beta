@@ -1214,21 +1214,35 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
       this.camera.updateProjectionMatrix();
   
       // Native phone orientation handler
-      this._onDeviceOrientation = (event) => {
-        if (!this.motionEnabled) return;
-  
-        const alpha = THREE.MathUtils.degToRad(event.alpha || 0); // compass/yaw
-        const beta  = THREE.MathUtils.degToRad(event.beta || 0);  // front-back tilt
-        const gamma = THREE.MathUtils.degToRad(event.gamma || 0); // side tilt
-  
-        // Phone-as-window camera rotation
-        this.camera.rotation.set(
-          beta - Math.PI / 2,
-          alpha,
-          -gamma,
-          'YXZ'
-        );
-      };
+      const zee = new THREE.Vector3(0, 0, 1);
+const euler = new THREE.Euler();
+const q0 = new THREE.Quaternion();
+const q1 = new THREE.Quaternion(
+  -Math.sqrt(0.5),
+  0,
+  0,
+  Math.sqrt(0.5)
+);
+
+this._onDeviceOrientation = (event) => {
+  if (!this.motionEnabled) return;
+
+  const alpha = THREE.MathUtils.degToRad(event.alpha || 0);
+  const beta  = THREE.MathUtils.degToRad(event.beta || 0);
+  const gamma = THREE.MathUtils.degToRad(event.gamma || 0);
+
+  const orient = THREE.MathUtils.degToRad(
+    window.screen.orientation?.angle || window.orientation || 0
+  );
+
+  euler.set(beta, alpha, -gamma, 'YXZ');
+
+  this.camera.quaternion.setFromEuler(euler);
+  this.camera.quaternion.multiply(q1);
+  this.camera.quaternion.multiply(
+    q0.setFromAxisAngle(zee, -orient)
+  );
+};
   
       window.addEventListener('deviceorientation', this._onDeviceOrientation, true);
   
