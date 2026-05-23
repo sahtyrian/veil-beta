@@ -1248,9 +1248,7 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
     if (!this.isActive) return;
     this.rafId = requestAnimationFrame(() => this.animate());
 
-    if (this.motionEnabled && this.motionControls) {
-      this.motionControls.update();
-    } else if (this.controls) {
+    if (!this.motionEnabled && this.controls) {
       this.controls.update();
     }
 
@@ -1289,7 +1287,7 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
       window.removeEventListener('deviceorientation', this._onDeviceOrientation, true);
       this._onDeviceOrientation = null;
     }
-    
+
     this.renderer.dispose();
   }
   
