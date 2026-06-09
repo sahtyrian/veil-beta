@@ -1258,20 +1258,31 @@ this._onDeviceOrientation = (event) => {
     }
   }
   
-  animate() {
+  renderFrame() {
     if (!this.isActive) return;
-    this.rafId = requestAnimationFrame(() => this.animate());
-
+  
     if (!this.motionEnabled && this.controls) {
       this.controls.update();
     }
-
-    if (this.stars) this.stars.rotation.y += this.cfg.rotation.autoRotateSpeed;
-
+  
+    if (this.stars) {
+      this.stars.rotation.y += this.cfg.rotation.autoRotateSpeed;
+    }
+  
     this.updateStars();
-
-    if (this.composer) this.composer.render();
-    else this.renderer.render(this.scene, this.camera);
+  
+    if (this.composer) {
+      this.composer.render();
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
+  }
+  
+  animate() {
+    if (!this.isActive) return;
+  
+    this.rafId = requestAnimationFrame(() => this.animate());
+    this.renderFrame();
   }
 
   // ---------- LIFECYCLE ----------
