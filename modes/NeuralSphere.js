@@ -217,7 +217,7 @@ class AudioFeatures {
 }
 
 export class NeuralSphere {
-  constructor(shared, neuralMapData = null, options = {}) {
+  constructor(shared, neuralMapData = null,  options = {}) {
     // Shared
     this.shared        = shared;
     this.audioContext  = shared.audioContext;
@@ -250,6 +250,8 @@ if (infoBox) infoBox.style.display = 'none';
       canvas: this.canvas,
       antialias: this.cfg.renderer.antialias
     });
+    
+    this.renderer.xr.enabled = true;
 
     // Controls — inside-view lookaround mode
 this.controls = null;
