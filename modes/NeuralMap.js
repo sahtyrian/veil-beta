@@ -39,16 +39,15 @@ export class NeuralMap {
     this.camera   = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    
     // Controls tuning (less twitchy)
-this.controls.enableDamping = true;
-this.controls.dampingFactor = 0.08;
-
-this.controls.zoomSpeed   = 0.35;
-this.controls.rotateSpeed = 0.45;
-this.controls.panSpeed    = 0.55;
-
-this.controls.minDistance = 2;
-this.controls.maxDistance = 500;
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.08;
+    this.controls.zoomSpeed   = 0.35;
+    this.controls.rotateSpeed = 0.45;
+    this.controls.panSpeed    = 0.55;
+    this.controls.minDistance = 2;
+    this.controls.maxDistance = 500;
 
     // Audio
     this.audioBuffer = shared.lastAudioBuffer || null; // <-- hydrate from shared
@@ -68,12 +67,12 @@ this.controls.maxDistance = 500;
     const infoBox = document.getElementById('info');
     if (infoBox) infoBox.style.display = '';
 
-    // Transport state (true pause / resume)
-this.playStartTime = 0;   // audioContext.currentTime when playback started
-this.pauseOffset   = 0;   // seconds into track where we paused
-this.duration      = 0;   // cached duration of buffer
+    // Transport state
+    this.playStartTime = 0;   
+    this.pauseOffset   = 0;   
+    this.duration      = 0;   
 
-// Animation control
+    // Animation control
     this.isActive = true;
     this.rafId    = null;
 
@@ -89,15 +88,18 @@ this.duration      = 0;   // cached duration of buffer
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.sizeToContainer();
     this.renderer.setClearColor(0x000000);
-    this.camera.position.set(0, 0, 50);
+    this.camera.position.set(0, 0, 95);
 
     this.scene.add(new THREE.AmbientLight(0x404040, 0.4));
+    
     const light1 = new THREE.PointLight(0x00ff88, 1, 100);
     light1.position.set(20, 20, 20);
     this.scene.add(light1);
+    
     const light2 = new THREE.PointLight(0x00aaff, 1, 100);
     light2.position.set(-20, -20, -20);
     this.scene.add(light2);
+    
     this.scene.add(this.nodeGroup);
 
     window.addEventListener('resize', this._onResize);
@@ -173,19 +175,27 @@ this.duration      = 0;   // cached duration of buffer
 
   async play() {
     if (this.shared?.transport) await this.shared.transport.play();
-    if (this.playBtn && this.pauseBtn) { this.playBtn.disabled = true; this.pauseBtn.disabled = false; }
+    if (this.playBtn && this.pauseBtn) { 
+      this.playBtn.disabled = true; 
+      this.pauseBtn.disabled = false; 
+    }
   }
   
   pause() {
     if (this.shared?.transport) this.shared.transport.pause();
-    if (this.playBtn && this.pauseBtn) { this.playBtn.disabled = false; this.pauseBtn.disabled = true; }
+    if (this.playBtn && this.pauseBtn) { 
+      this.playBtn.disabled = false; 
+      this.pauseBtn.disabled = true; 
+    }
   }
   
   reset() {
     if (this.shared?.transport) this.shared.transport.reset();
-    if (this.playBtn && this.pauseBtn) { this.playBtn.disabled = false; this.pauseBtn.disabled = true; }
+    if (this.playBtn && this.pauseBtn) { 
+      this.playBtn.disabled = false; 
+      this.pauseBtn.disabled = true; 
+    }
   }
-  
 
   clearNetwork() {
     this.nodes.forEach(n => {
@@ -286,7 +296,6 @@ this.duration      = 0;   // cached duration of buffer
     }));
   }
   
-  
   // ---------- UPDATE LOOP ----------
   update() {
     if (!this.analyser || this.nodes.length === 0) return;
@@ -310,6 +319,7 @@ this.duration      = 0;   // cached duration of buffer
     this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const intersects = this.raycaster.intersectObjects(this.nodes);
+    
     if (intersects.length > 0) {
       const node = intersects[0].object;
       if (this.nodeInfoEl) {
@@ -347,11 +357,10 @@ this.duration      = 0;   // cached duration of buffer
   recenter() {
     if (!this.camera || !this.controls) return;
   
-    // snap back to a known good view
+    // snap back to the exact original load view
     this.controls.target.set(0, 0, 0);
-    this.camera.position.set(0, 0, 15);
+    this.camera.position.set(0, 0, 95);
   
     this.controls.update();
   }
-  
 }
