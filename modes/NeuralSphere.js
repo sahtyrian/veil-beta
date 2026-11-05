@@ -10,7 +10,6 @@
 // modes/NeuralSphere.js
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-// import { DeviceOrientationControls } from 'three/addons/controls/DeviceOrientationControls.js';
 
 // VEIL GLOW (Bloom)
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -19,13 +18,6 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 
 // Map DNA (headless)
 import { buildMapDataFromAudio } from '../MapDNA.js';
-
-/**
- * VEIL — NeuralGalaxy Mode (CURRENT BEST + DANCE RESTORE) — Logistic Blending Restore
- * - Soft (logistic) blending between Bass / Mids / Treble zones (no hard band cuts)
- * - Arms read as MID energy lanes (top view), bounded motion, infinite spin
- * - Preserves deterministic DNA + brightness/color recipe + bloom
- */
 
 const DEFAULTS = {
   renderer: { clearColor: 0x000000, maxDpr: 2, antialias: true },
@@ -177,7 +169,6 @@ class AudioFeatures {
     const highMid = bands.highMid;
     const treble = bands.treble;
 
-    // mid pulse
     const dLowMid = lowMid - this.prevLowMid;
     this.prevLowMid = lowMid;
 
@@ -186,14 +177,12 @@ class AudioFeatures {
     this.midPulse  = THREE.MathUtils.clamp(this.midPulse, 0, 1.5);
     const pulseScaled = THREE.MathUtils.clamp(this.midPulse * (0.65 + sensNorm * 1.35), 0, 1.0);
 
-    // envelopes
     const bassTarget   = THREE.MathUtils.clamp(bass   * sensGain, 0, 1);
     const trebleTarget = THREE.MathUtils.clamp(treble * sensGain, 0, 1);
 
     this.bassEnv   = this.bassEnv   * cfg.audio.envHold + bassTarget   * cfg.audio.envLerp;
     this.trebleEnv = this.trebleEnv * cfg.audio.envHold + trebleTarget * cfg.audio.envLerp;
 
-    // bass hit
     const dBass = bass - this.prevBass;
     this.prevBass = bass;
 
@@ -218,7 +207,6 @@ class AudioFeatures {
 
 export class NeuralSphere {
   constructor(shared, neuralMapData = null,  options = {}) {
-    // Shared
     this.shared        = shared;
     this.audioContext  = shared.audioContext;
     this.analyser      = shared.analyser;
@@ -228,20 +216,16 @@ export class NeuralSphere {
     this.audioHashEl   = shared.audioHashEl;
 
     const infoBox = document.getElementById('info');
-if (infoBox) infoBox.style.display = 'none';
+    if (infoBox) infoBox.style.display = 'none';
 
-// Song DNA
     this.songHash = shared.songHash || null;
 
-    // Options / config
     const presetName = options.preset || 'cinematic';
     const preset = PRESETS[presetName] || PRESETS.cinematic;
     this.cfg = mergeDeep(DEFAULTS, mergeDeep(preset, options.cfg || {}));
 
-    // Locked arms count for current galaxy
     this.ARMS_COUNT = null;
 
-    // Scene / view
     this.canvas      = document.getElementById('neuralCanvas');
     this.containerEl = document.getElementById('container');
     this.scene       = new THREE.Scene();
@@ -253,50 +237,34 @@ if (infoBox) infoBox.style.display = 'none';
     
     this.renderer.xr.enabled = true;
 
-    // Controls — inside-view lookaround mode
-this.controls = null;
+    this.controls = null;
+    if (options.enableControls !== false) {
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.controls.enableDamping = true;
+      this.controls.dampingFactor = 0.08;
+      this.controls.enableZoom = false;
+      this.controls.enablePan = false;
+      this.controls.minDistance = 0.001;
+      this.controls.maxDistance = 0.001;
+      this.controls.rotateSpeed = -0.35;
+      this.controls.target.set(0, 0, -1);
+    }
 
-if (options.enableControls !== false) {
-  this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-
-  // Inside-sphere behavior
-  this.controls.enableDamping = true;
-  this.controls.dampingFactor = 0.08;
-
-  // Disable movement through space for now
-  this.controls.enableZoom = false;
-  this.controls.enablePan = false;
-
-  // Lock camera near center
-  this.controls.minDistance = 0.001;
-  this.controls.maxDistance = 0.001;
-
-  // Lookaround feel — flip sign if drag feels backwards
-  this.controls.rotateSpeed = -0.35;
-
-  // Look straight ahead from center
-  this.controls.target.set(0, 0, -1);
-}
-
-// Motion controls — optional phone gyro lookaround
-this.motionControls = null;
-this.motionEnabled = false;
+    this.motionControls = null;
+    this.motionEnabled = false;
 
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.55));
     this.camera.position.set(0, 0, 0);
 
-    // Save home camera state (for recenter)
-if (this.controls) {
-  this._homeCamPos = this.camera.position.clone();
-  this._homeTarget = this.controls.target.clone();
-}
+    if (this.controls) {
+      this._homeCamPos = this.camera.position.clone();
+      this._homeTarget = this.controls.target.clone();
+    }
 
-    // VEIL GLOW pipeline
     this.composer = null;
     this.renderPass = null;
     this.bloomPass = null;
 
-    // Galaxy data
     this.starGeometry = null;
     this.starMaterial = null;
     this.stars        = null;
@@ -309,49 +277,41 @@ if (this.controls) {
 
     this.mapData = Array.isArray(neuralMapData) ? neuralMapData : null;
 
-    // Audio
     this.audioBuffer = shared.lastAudioBuffer || null;
     this.source      = null;
     this.isPlaying   = false;
 
-    // Cached sensitivity
     this._sensNormCached = 0.5;
     this._onSensInput = () => { this._sensNormCached = this._getSensitivityNorm(); };
 
-    // Transport state (true pause / resume)
-this.playStartTime = 0;   // audioContext.currentTime when playback started
-this.pauseOffset   = 0;   // seconds into track where we paused
-this.duration      = 0;   // cached duration of buffer
+    this.playStartTime = 0;   
+    this.pauseOffset   = 0;   
+    this.duration      = 0;   
 
-// Animation control
     this.isActive  = true;
     this.rafId     = null;
     this._onResize = this.sizeToContainer.bind(this);
-    // Per-point smoothing caches (prevents herky-jerky / reversal on snaps)
+    
     this._phiCache = null;
     this._rCache   = null;
     this._lastNow  = 0;
 
-    // Audio features
     this.features = new AudioFeatures(this.analyser, this.cfg);
 
     this.init();
   }
 
-  // ---------- INIT ----------
   init() {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.cfg.renderer.maxDpr));
     this.sizeToContainer();
     this.renderer.setClearColor(this.cfg.renderer.clearColor);
     window.addEventListener('resize', this._onResize);
 
-    // Cache sensitivity changes
     if (this.sensitivityEl) {
       this._sensNormCached = this._getSensitivityNorm();
       this.sensitivityEl.addEventListener('input', this._onSensInput);
     }
 
-    // Build VEIL glow pipeline
     if (this.cfg.glow.enabled) this._initGlowPipeline();
 
     if (this.audioBuffer && !this.songHash) {
@@ -360,18 +320,16 @@ this.duration      = 0;   // cached duration of buffer
     }
     if (this.songHash && this.audioHashEl) this.audioHashEl.textContent = `Hash: ${this.songHash}`;
 
-    // ✅ Always build galaxy from Map DNA (deterministic per song)
-if (this.audioBuffer) {
-  this.mapData = buildMapDataFromAudio(this.audioBuffer, this.songHash);
-  this.createGalaxyFromNeuralMap(this.mapData);
+    if (this.audioBuffer) {
+      this.mapData = buildMapDataFromAudio(this.audioBuffer, this.songHash);
+      this.createGalaxyFromNeuralMap(this.mapData);
 
-  const playBtn  = document.getElementById('playBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  if (playBtn && pauseBtn) { playBtn.disabled = false; pauseBtn.disabled = true; }
-}
+      const playBtn  = document.getElementById('playBtn');
+      const pauseBtn = document.getElementById('pauseBtn');
+      if (playBtn && pauseBtn) { playBtn.disabled = false; pauseBtn.disabled = true; }
+    }
 
-this.animate();
-
+    this.animate();
   }
 
   _initGlowPipeline() {
@@ -400,32 +358,6 @@ this.animate();
     if (this.composer) this.composer.setSize(w, h);
     if (this.bloomPass) this.bloomPass.setSize(w, h);
   }
-
-  onNewAudio(audioBuffer) {
-    this.audioBuffer = audioBuffer;
-    this.shared.lastAudioBuffer = audioBuffer;
-  
-    if (this.audioBuffer && !this.songHash) {
-      this.songHash = this.computeAudioHash(this.audioBuffer);
-      this.shared.songHash = this.songHash;
-    } else if (this.audioBuffer) {
-      this.songHash = this.computeAudioHash(this.audioBuffer);
-      this.shared.songHash = this.songHash;
-    }
-  
-    if (this.songHash && this.audioHashEl) {
-      this.audioHashEl.textContent = `Hash: ${this.songHash}`;
-    }
-  
-    // rebuild galaxy deterministically
-    this.mapData = buildMapDataFromAudio(this.audioBuffer, this.songHash);
-    this.createGalaxyFromNeuralMap(this.mapData);
-  
-    // UI state: ready to play
-    const playBtn  = document.getElementById('playBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    if (playBtn && pauseBtn) { playBtn.disabled = false; pauseBtn.disabled = true; }
-  }
   
   async play() {
     if (this.shared?.transport) await this.shared.transport.play();
@@ -448,7 +380,6 @@ this.animate();
     if (playBtn && pauseBtn) { playBtn.disabled = false; pauseBtn.disabled = true; }
   }
   
-  // ---------- HELPERS ----------
   computeAudioHash(buffer) {
     const data = buffer.getChannelData(0);
     let hash = 0;
@@ -529,7 +460,6 @@ this.animate();
     return n;
   }
 
-  // ---------- BUILDERS ----------
   createGalaxyFromNeuralMap(data) {
     const N = Math.min(4000, Math.max(900, data.length * 10));
     if (!Array.isArray(data) || data.length === 0) return this.createNeutralSpiral(N);
@@ -560,118 +490,22 @@ this.animate();
       const swirl = (t * 7.0 + freq * 1.5) * Math.PI;
       const angle = (hue * Math.PI * 2) + armAngle + swirl + Math.sin(freq * 20 + i * 0.1) * 0.6;
 
-      // --- SPHERICAL WRAP by node freq (bass bottom -> treble top) ---
-const u   = THREE.MathUtils.clamp(freq * 8.0, 0, 1); // 0..1-ish
-const phi = (1.0 - u) * Math.PI;                    // bottom: PI, top: 0
-const lat = Math.sin(phi);
+      const u   = THREE.MathUtils.clamp(freq * 8.0, 0, 1); 
+      const phi = (1.0 - u) * Math.PI;                    
+      const lat = Math.sin(phi);
 
-const ripple = (Math.sin(freq * 18 + t * 10) * 10) + (rand() - 0.5) * 7;
-const R = Math.max(1e-3, radiusBase + ripple);
+      const ripple = (Math.sin(freq * 18 + t * 10) * 10) + (rand() - 0.5) * 7;
+      const R = Math.max(1e-3, radiusBase + ripple);
 
-const x = Math.cos(angle) * (R * lat);
-const z = Math.sin(angle) * (R * lat);
-const y = Math.cos(phi) * R;
-
+      const x = Math.cos(angle) * (R * lat);
+      const z = Math.sin(angle) * (R * lat);
+      const y = Math.cos(phi) * R;
 
       positions[i * 3 + 0] = x;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
 
       const baseHue = (hue + freq * 0.30) % 1;
-      this.baseHues[i] = baseHue;
-      c.setHSL(baseHue, 1.0, 0.58);
-      colors[i * 3 + 0] = c.r;
-      colors[i * 3 + 1] = c.g;
-      colors[i * 3 + 2] = c.b;
-
-      const fNorm = THREE.MathUtils.clamp(freq * 8.0, 0, 1);
-      shapeTiers[i] = (fNorm < 0.33) ? 0.0 : (fNorm < 0.66) ? 1.0 : 2.0;
-    }
-
-    this._cacheBaselines(positions, shapeTiers);
-    this._commitStars(positions, colors, shapeTiers);
-  }
-
-  createGalaxyFromAudio(buffer) {
-    const ch  = buffer.getChannelData(0);
-    const len = ch.length;
-
-    const samples = 1024;
-    const stride  = Math.max(1, Math.floor(len / samples));
-
-    const amps  = new Float32Array(samples);
-    const freqs = new Float32Array(samples);
-    const hues  = new Float32Array(samples);
-
-    let hueSeed = 0;
-    for (let i = 0; i < samples; i++) {
-      const start = i * stride;
-      const end   = Math.min(len, start + stride);
-
-      let maxAbs = 0, zc = 0;
-      let prev = ch[start];
-
-      for (let j = start + 1; j < end; j++) {
-        const v = ch[j];
-        if (Math.abs(v) > maxAbs) maxAbs = Math.abs(v);
-        if ((prev >= 0) !== (v >= 0)) zc++;
-        prev = v;
-      }
-      const segLen = Math.max(1, end - start);
-      const freq   = zc / segLen;
-
-      amps[i]  = maxAbs;
-      freqs[i] = freq;
-
-      hueSeed = (hueSeed + maxAbs * 0.09) % 1;
-      hues[i] = hueSeed;
-    }
-
-    const N = Math.min(4000, Math.max(1000, samples * 4));
-    const rand = this.seededRandomFromHash(this.songHash || String(len));
-    const armsCount = this._chooseArmsCount(rand);
-
-    const positions  = new Float32Array(N * 3);
-    const colors     = new Float32Array(N * 3);
-    const shapeTiers = new Float32Array(N);
-    this.baseHues    = new Float32Array(N);
-
-    const c = new THREE.Color();
-
-    for (let i = 0; i < N; i++) {
-      const k    = i % samples;
-      const amp  = amps[k];
-      const freq = freqs[k];
-      const hue  = hues[k];
-
-      const armIdx   = (i % armsCount) / armsCount;
-      const armAngle = armIdx * Math.PI * 2;
-
-      const t = i / N;
-      const radius = (k / samples) * 220 + amp * 95 + rand() * 22;
-
-      const swirl = (t * 7.4 + freq * 1.6) * Math.PI;
-      const angle = hue * Math.PI * 2 + armAngle + swirl + Math.sin(freq * 22 + i * 0.11) * 0.55;
-
-      // --- SPHERICAL WRAP by frequency index (bass bottom -> treble top) ---
-const u   = (samples > 1) ? (k / (samples - 1)) : 0.0; // 0..1
-const phi = (1.0 - u) * Math.PI;                       // bottom: PI, top: 0
-const lat = Math.sin(phi);
-
-// keep your existing density/energy radius, but add a small cymatic ripple
-const ripple = (Math.sin(freq * 20 + t * 11) * 12) + (rand() - 0.5) * 8;
-const R = Math.max(1e-3, radius + ripple);
-
-const x = Math.cos(angle) * (R * lat);
-const z = Math.sin(angle) * (R * lat);
-const y = Math.cos(phi) * R;
-
-
-      positions[i * 3 + 0] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-
-      const baseHue = (hue + freq * 0.35) % 1;
       this.baseHues[i] = baseHue;
       c.setHSL(baseHue, 1.0, 0.58);
       colors[i * 3 + 0] = c.r;
@@ -705,17 +539,16 @@ const y = Math.cos(phi) * R;
 
       const angle  = t * Math.PI * 6 + armAngle * 0.35;
 
-      // --- SPHERICAL WRAP by t (bottom -> top) ---
-const u   = THREE.MathUtils.clamp(t, 0, 1);
-const phi = (1.0 - u) * Math.PI;   // bottom: PI, top: 0
-const lat = Math.sin(phi);
+      const u   = THREE.MathUtils.clamp(t, 0, 1);
+      const phi = (1.0 - u) * Math.PI;   
+      const lat = Math.sin(phi);
 
-const ripple = (Math.sin(angle * 2.0) * 10) + (rand() - 0.5) * 6;
-const R = Math.max(1e-3, radius + ripple);
+      const ripple = (Math.sin(angle * 2.0) * 10) + (rand() - 0.5) * 6;
+      const R = Math.max(1e-3, radius + ripple);
 
-const x = Math.cos(angle) * (R * lat);
-const z = Math.sin(angle) * (R * lat);
-const y = Math.cos(phi) * R;
+      const x = Math.cos(angle) * (R * lat);
+      const z = Math.sin(angle) * (R * lat);
+      const y = Math.cos(phi) * R;
 
 
       positions[i * 3 + 0] = x;
@@ -736,7 +569,6 @@ const y = Math.cos(phi) * R;
     this._commitStars(positions, colors, shapeTiers);
   }
 
-  // ---------- COMMIT STARS ----------
   _commitStars(positions, colors, shapeTiers) {
     this.clearStars();
 
@@ -776,7 +608,6 @@ const y = Math.cos(phi) * R;
           float t = clamp(vShapeTier, 0.0, 2.0);
           vec3 pos = position;
 
-          // syrupy mid bulge (works best when t is continuous)
           float midCenter = 1.0;
           float midRange  = 0.9;
           float midWeight = 1.0 - clamp(abs(t - midCenter) / midRange, 0.0, 1.0);
@@ -790,14 +621,10 @@ const y = Math.cos(phi) * R;
 
           float size = uSize * (300.0 / -mvPosition.z);
 
-          // bass size boost (tier 0)
           float bassBoost = smoothstep(1.2, 0.0, t);
           float bassScale = 1.0 + bassBoost * 4.0;
 
-          // sustained “weight”
           bassScale *= (1.0 + bassBoost * uBassEnv * 0.8);
-
-          // impact “punch”
           bassScale *= (1.0 + bassBoost * uBassHit * 1.75);
 
           size *= bassScale;
@@ -819,14 +646,11 @@ const y = Math.cos(phi) * R;
           vec2 uv = gl_PointCoord * 2.0 - 1.0;
           float r = length(uv);
 
-          // Tier 0: blob
           float blob = smoothstep(1.0, 0.6, r);
 
-          // Tier 1: hexagon
           float hd = hexDist(uv);
           float hex = smoothstep(1.0, 0.62, hd);
 
-          // Tier 2: 4-point star
           float ang = atan(uv.y, uv.x);
           float spikes = abs(cos(ang * 4.0));
           float star = smoothstep(1.1, 0.4, r * (0.6 + 0.7 * spikes));
@@ -838,7 +662,6 @@ const y = Math.cos(phi) * R;
 
           if (mask < 0.01) discard;
 
-          // bloom feed: upper tiers “hotter”
           float glowBoost = 0.75 + 0.65 * smoothstep(1.0, 2.0, t);
           vec3  col = vColor * glowBoost;
 
@@ -849,8 +672,6 @@ const y = Math.cos(phi) * R;
 
     this.stars = new THREE.Points(this.starGeometry, this.starMaterial);
     this.scene.add(this.stars);
-    // this.recenter();
-
   }
 
   clearStars() {
@@ -863,40 +684,36 @@ const y = Math.cos(phi) * R;
     this.starMaterial = null;
   }
 
-// ---------- AUDIO HANDOFF ----------
-onNewAudio(buffer) {
-  if (!buffer) return;
+  onNewAudio(buffer) {
+    if (!buffer) return;
 
-  // sync local reference (visual-only)
-  this.audioBuffer = buffer;
+    this.audioBuffer = buffer;
 
-  // reset visual-time state
-  this.pauseOffset   = 0;
-  this.playStartTime = 0;
-  this.duration      = buffer.duration || 0;
+    this.pauseOffset   = 0;
+    this.playStartTime = 0;
+    this.duration      = buffer.duration || 0;
 
-  // compute deterministic DNA
-  this.songHash = this.computeAudioHash(buffer);
-  this.shared.songHash = this.songHash;
+    this.songHash = this.computeAudioHash(buffer);
+    this.shared.songHash = this.songHash;
 
-  if (this.audioHashEl) {
-    this.audioHashEl.textContent = `Hash: ${this.songHash}`;
+    if (this.audioHashEl) {
+      this.audioHashEl.textContent = `Hash: ${this.songHash}`;
+    }
+
+    this._phiCache = null;
+    this._rCache = null;
+
+    this.mapData = buildMapDataFromAudio(buffer, this.songHash);
+    this.createGalaxyFromNeuralMap(this.mapData);
+
+    const playBtn  = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (playBtn && pauseBtn) {
+      playBtn.disabled  = false;
+      pauseBtn.disabled = true;
+    }
   }
 
-  // ALWAYS rebuild from Map DNA
-  this.mapData = buildMapDataFromAudio(buffer, this.songHash);
-  this.createGalaxyFromNeuralMap(this.mapData);
-
-  // UI state
-  const playBtn  = document.getElementById('playBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  if (playBtn && pauseBtn) {
-    playBtn.disabled  = false;
-    pauseBtn.disabled = true;
-  }
-}
-
-  // ---------- ANIMATION / REACTIVITY ----------
   updateStars() {
     if (!this.stars || !this.analyser || !this.starGeometry || !this.basePositions || !this.sortedYs || this.sortedYs.length < 2) return;
 
@@ -910,14 +727,12 @@ onNewAudio(buffer) {
 
     const count = positions.length / 3;
 
-    // Ensure smoothing caches match point count
     if (!this._phiCache || this._phiCache.length !== count) this._phiCache = new Float32Array(count);
     if (!this._rCache   || this._rCache.length   !== count) this._rCache   = new Float32Array(count);
 
     const sensNorm = this._sensNormCached;
     const F = this.features.sample(sensNorm, this.cfg);
 
-    // uniforms
     if (this.starMaterial?.uniforms?.uMidPulse) this.starMaterial.uniforms.uMidPulse.value = F.pulseScaled;
     if (this.starMaterial?.uniforms?.uBassEnv)  this.starMaterial.uniforms.uBassEnv.value  = F.bassEnv;
     if (this.starMaterial?.uniforms?.uBassHit) {
@@ -927,7 +742,6 @@ onNewAudio(buffer) {
       );
     }
 
-    // Bloom reacts to audio (subtle)
     if (this.bloomPass && this.cfg.glow.trebleReactive) {
       const treble = F.bands.treble;
       const bass   = F.bands.bass;
@@ -947,18 +761,14 @@ onNewAudio(buffer) {
 
     const now = performance.now();
     const t0  = now * 0.001;
-
-    // Frame delta (seconds) for smoothing
     const dt = Math.min(0.05, Math.max(0.001, (now - (this._lastNow || now)) * 0.001));
     this._lastNow = now;
 
-    // carrier tide
     const tide = Math.sin(t0 * 0.55) * 0.6 + Math.sin(t0 * 0.21) * 0.4;
     const carrier = this.cfg.spiral.carrierTide * (0.65 + 0.55 * sensNorm) * tide;
 
     const c = NeuralSphere._tmpColor || (NeuralSphere._tmpColor = new THREE.Color());
 
-    // mid energy driver
     const midEnergyGlobal = THREE.MathUtils.clamp(
       (F.bands.lowMid * 0.55 + F.bands.highMid * 0.45) * F.sensGain,
       0, 1
@@ -969,7 +779,6 @@ onNewAudio(buffer) {
     const yMin = this.sortedYs[0];
     const yMax = this.sortedYs[this.sortedYs.length - 1];
 
-    // logistic blend parameters
     const bassEdgeN   = THREE.MathUtils.clamp(this.cfg.blend?.bassEdge ?? 0.22, 0.02, 0.48);
     const trebleEdgeN = THREE.MathUtils.clamp(this.cfg.blend?.trebleEdge ?? 0.78, 0.52, 0.98);
     const k           = THREE.MathUtils.clamp(this.cfg.blend?.softness ?? 0.08, 0.015, 0.25);
@@ -984,10 +793,8 @@ onNewAudio(buffer) {
       const seed  = this._hash01(i);
       const phase = seed * Math.PI * 2;
 
-      // normalized y -> 0..1
       const yNorm = THREE.MathUtils.clamp((by - yMin) / Math.max(1e-6, (yMax - yMin)), 0, 1);
 
-      // logistic weights (sum->1)
       const trebleW = this._sigmoid((yNorm - trebleEdgeN) / k);
       const bassW   = 1.0 - this._sigmoid((yNorm - bassEdgeN) / k);
       let midW      = this._logisticWindow(yNorm, bassEdgeN, trebleEdgeN, k);
@@ -997,19 +804,16 @@ onNewAudio(buffer) {
       const wM = midW / sumW;
       const wT = trebleW / sumW;
 
-      // continuous tier for shader morph (0..2)
       tiers[i] = 0.0 * wB + 1.0 * wM + 2.0 * wT;
 
       const fIndex    = Math.floor((i / count) * F.data.length);
       const intensity = (F.data[fIndex] / 255);
 
-      // sphere-aware warp (replaces the old polar warp block)
       const rBase = Math.sqrt(bx * bx + by * by + bz * bz) + 1e-6;
-      const r0    = rBase; // keep name used later (midBand, etc.)
+      const r0    = rBase; 
       
-      // spherical coords from base position
       const theta0 = Math.atan2(bz, bx);
-      const phi0   = Math.acos(THREE.MathUtils.clamp(by / rBase, -1, 1)); // 0..PI (top..bottom)
+      const phi0   = Math.acos(THREE.MathUtils.clamp(by / rBase, -1, 1)); 
       
       const midWeight = wM;
       const breath = (F.pulseScaled * this.cfg.spiral.radialBreathe) * (0.35 + 0.65 * midWeight);
@@ -1026,100 +830,74 @@ onNewAudio(buffer) {
       
       let theta = theta0 + flow * flowWave * 0.35 + twistAudio * 0.18 + tideTheta;
       
-      // Arm lane attraction (MID-locked) — FORWARD-ONLY (no snap-back)
-// NOTE: use `let spiralBase` because we may wrap it forward
-const armId    = i % armsCount;
-const armAngle = (armId / armsCount) * Math.PI * 2;
-let spiralBase = armAngle + rBase * this.cfg.arms.pitch;
+      const armId    = i % armsCount;
+      const armAngle = (armId / armsCount) * Math.PI * 2;
+      let spiralBase = armAngle + rBase * this.cfg.arms.pitch;
 
-const snapBoost = (0.25 + 0.75 * midEnergyGlobal) * (0.55 + 0.45 * sensNorm);
-const armAssert = THREE.MathUtils.clamp(
-  this.cfg.arms.tightness * snapBoost * (0.55 + 0.45 * intensity) * (0.20 + 0.80 * wM),
-  0, 1
-);
+      const snapBoost = (0.25 + 0.75 * midEnergyGlobal) * (0.55 + 0.45 * sensNorm);
+      const armAssert = THREE.MathUtils.clamp(
+        this.cfg.arms.tightness * snapBoost * (0.55 + 0.45 * intensity) * (0.20 + 0.80 * wM),
+        0, 1
+      );
 
-// Wrap spiralBase so it's the nearest equivalent angle AHEAD of theta (prevents reverse)
-while (spiralBase < theta) spiralBase += Math.PI * 2;
+      while (spiralBase < theta) spiralBase += Math.PI * 2;
 
-// Lerp cannot pull backward now
-theta = THREE.MathUtils.lerp(theta, spiralBase, armAssert);
-theta += Math.sin(t0 * 0.35 + rBase * 0.02 + phase) * this.cfg.arms.wave * armAssert;
+      theta = THREE.MathUtils.lerp(theta, spiralBase, armAssert);
+      theta += Math.sin(t0 * 0.35 + rBase * 0.02 + phase) * this.cfg.arms.wave * armAssert;
       
-      // radial: mid breath + bass hit swell + treble pop swell
       const bassSwell = wB * F.bassHit * this.cfg.radial.bassHitSwell * (0.45 + 0.55 * sensNorm);
       const treblePop = wT * (F.bands.treble * F.sensGain) * this.cfg.radial.treblePopRadial * (0.35 + 0.65 * sensNorm);
       
       const r = rBase * (1.0 + breath + bassSwell + treblePop)
         + Math.sin(t0 * 0.45 + theta0 * 3.0 + phase) * (0.55 + intensity) * flow;
       
-      // vertical lives in phi (KEEP STABLE): treble can gently lift toward top pole
-// bass "snap" must be RADIAL, not phi, to avoid inward/backward recoil on the sphere.
+      const phiTrebleLift = (wT) * (F.trebleEnv * (0.08 + 0.10 * sensNorm));
+      const phiTarget = THREE.MathUtils.clamp(
+        phi0 - phiTrebleLift,
+        0.02, Math.PI - 0.02
+      );
 
-const phiTrebleLift = (wT) * (F.trebleEnv * (0.08 + 0.10 * sensNorm)); // subtle
-const phiTarget = THREE.MathUtils.clamp(
-  phi0 - phiTrebleLift,
-  0.02, Math.PI - 0.02
-);
+      const aPhi = 1.0 - Math.exp(-dt * (10.0 + 18.0 * sensNorm));
+      const prevPhi = this._phiCache[i] ?? phi0;
+      const phi = prevPhi + (phiTarget - prevPhi) * aPhi;
+      this._phiCache[i] = phi;
 
-// Exponential smoothing per-point (keeps it silky)
-const aPhi = 1.0 - Math.exp(-dt * (10.0 + 18.0 * sensNorm));
-const prevPhi = this._phiCache[i] ?? phi0;
-const phi = prevPhi + (phiTarget - prevPhi) * aPhi;
-this._phiCache[i] = phi;
+      const radialSplash =
+        (wB) *
+        (F.bassHit * (0.14 + 0.18 * sensNorm) * (0.55 + 0.45 * intensity));
 
-// --- RADIAL "SPLASH" (OUTWARD SNAP) ---
-// Bass hit expands the sphere outward. No sign flips, no latitude shrink.
-const radialSplash =
-  (wB) *
-  (F.bassHit * (0.14 + 0.18 * sensNorm) * (0.55 + 0.45 * intensity));
+      const radialWeight =
+        (wB) *
+        (F.bassEnv * (0.04 + 0.08 * sensNorm));
 
-// optional: add a little sustained bass "weight" outward too
-const radialWeight =
-  (wB) *
-  (F.bassEnv * (0.04 + 0.08 * sensNorm));
+      const rTarget = r * (1.0 + radialWeight + radialSplash);
 
-// target radius (your existing r already includes breath/swell/pop; we ADD splash here)
-const rTarget = r * (1.0 + radialWeight + radialSplash);
+      const aR = 1.0 - Math.exp(-dt * (8.0 + 14.0 * sensNorm));
+      const prevR = this._rCache[i] ?? rBase;
+      const rS = prevR + (rTarget - prevR) * aR;
+      this._rCache[i] = rS;
 
-// Smooth radius too (dancy, no herky-jerk)
-const aR = 1.0 - Math.exp(-dt * (8.0 + 14.0 * sensNorm));
-const prevR = this._rCache[i] ?? rBase;
-const rS = prevR + (rTarget - prevR) * aR;
-this._rCache[i] = rS;
+      let x = rS * Math.sin(phi) * Math.cos(theta);
+      let z = rS * Math.sin(phi) * Math.sin(theta);
+      const yBase = rS * Math.cos(phi);
 
-// back to xyz (sphere-consistent)
-let x = rS * Math.sin(phi) * Math.cos(theta);
-let z = rS * Math.sin(phi) * Math.sin(theta);
-const yBase = rS * Math.cos(phi);
+      const tx = -Math.sin(theta);
+      const tz =  Math.cos(theta);
 
-      // --- GALACTIC TIDE (sphere-friendly, no jitter, no reversal) ---
-// Tangent direction around Y-axis at the current theta (counterclockwise flow)
-const tx = -Math.sin(theta);
-const tz =  Math.cos(theta);
+      const tideBase = this.cfg.swim.fieldSwim * (0.25 + 0.75 * intensity) * F.sensGain;
 
-// Base tide strength (smooth)
-const tideBase = this.cfg.swim.fieldSwim * (0.25 + 0.75 * intensity) * F.sensGain;
+      const tidePhase = (t0 * 0.75) + (phase * 0.35) + (rBase * 0.004);
+      const tideMod   = 0.65 + 0.35 * Math.sin(tidePhase);
 
-// Gentle multi-rate carrier for “liquid” feel
-const tidePhase = (t0 * 0.75) + (phase * 0.35) + (rBase * 0.004);
-const tideMod   = 0.65 + 0.35 * Math.sin(tidePhase);
+      const tTide = this.cfg.swim.trebleBoost * wT * (0.20 + 0.80 * intensity) * F.sensGain;
+      const tMod  = 0.55 + 0.45 * Math.sin(t0 * 1.35 + phase + rBase * 0.006);
 
-// Treble adds shimmer (still tangential)
-const tTide = this.cfg.swim.trebleBoost * wT * (0.20 + 0.80 * intensity) * F.sensGain;
-const tMod  = 0.55 + 0.45 * Math.sin(t0 * 1.35 + phase + rBase * 0.006);
+      const bTide = wB * (0.20 + 0.80 * intensity) * (0.55 + 0.45 * sensNorm);
+      const bMod  = 0.55 + 0.45 * Math.sin(t0 * 0.42 + phase + rBase * 0.003);
 
-// Bass adds slow undercurrent (still tangential)
-const bTide = wB * (0.20 + 0.80 * intensity) * (0.55 + 0.45 * sensNorm);
-const bMod  = 0.55 + 0.45 * Math.sin(t0 * 0.42 + phase + rBase * 0.003);
+      x += tx * (tideBase * tideMod + tTide * tMod + bTide * bMod);
+      z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
 
-// Apply tangential drift (this reads as “current” instead of wobble)
-x += tx * (tideBase * tideMod + tTide * tMod + bTide * bMod);
-z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
-
-
-      // vertical blend (soft)
-
-      // NOTE: phi already handles most vertical motion on the sphere; keep extra Y offsets subtle
       const sphereVertMix = 0.35;
       const droopBase = -this.cfg.vertical.bassDroopMax * F.bassEnv * wB * sphereVertMix;
       const droopHit  = -(this.cfg.vertical.bassHitDroopExtra * F.bassHit) * wB * (0.55 + 0.45 * sensNorm) * sphereVertMix;
@@ -1129,7 +907,6 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
 
       const yShimmer = Math.sin(now * 0.00085 + i * 0.007 + phase) * (0.18 + intensity) * F.sensGain;
 
-      // Mid band thickness (bell) blended by wM
       let yMidVolume = 0;
       if (this.cfg.midBand.enabled) {
         const dr = (rBase - this.cfg.midBand.centerR) / Math.max(1e-6, this.cfg.midBand.width);
@@ -1153,12 +930,10 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
       positions[bi + 1] = y;
       positions[bi + 2] = z;
 
-      // Arm gap contrast (structure through glow), also MID-weighted
       const dArm = this._angleDist(theta, spiralBase);
       const armLane = 1.0 - this._smoothstep(0.18, 0.55, dArm);
       const laneContrast = 1.0 - (1.0 - armLane) * this.cfg.arms.gapStrength * (0.30 + 0.70 * wM);
 
-      // color
       const baseHue = this.baseHues ? this.baseHues[i] : 0.6;
       const hue = (baseHue + F.bands.treble * 0.06 + intensity * 0.03 + wT * 0.015) % 1.0;
 
@@ -1187,12 +962,29 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
     posAttr.needsUpdate   = true;
     colAttr.needsUpdate   = true;
     shapeAttr.needsUpdate = true;
-
   }
 
   async enableMotionControls() {
+    // FIX: Act as a toggle. If already on, turn it off.
+    if (this.motionEnabled) {
+      this.motionEnabled = false;
+      
+      if (this._onDeviceOrientation) {
+        window.removeEventListener('deviceorientation', this._onDeviceOrientation, true);
+      }
+      
+      // Re-enable touch/mouse controls
+      if (this.controls) {
+        this.controls.enabled = true;
+      }
+      
+      // Snap camera back to default sphere center
+      this.recenter();
+      
+      return false; // Tells main.js to change button text back to 'Enable Motion'
+    }
+
     try {
-      // iOS requires permission from a direct user tap
       if (
         typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function'
@@ -1207,7 +999,6 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
   
       this.motionEnabled = true;
   
-      // Disable touch controls while gyro is active
       if (this.controls) this.controls.enabled = false;
   
       this.camera.position.set(0, 0, 0);
@@ -1215,36 +1006,35 @@ z += tz * (tideBase * tideMod + tTide * tMod + bTide * bMod);
       this.camera.far = 3000;
       this.camera.updateProjectionMatrix();
   
-      // Native phone orientation handler
       const zee = new THREE.Vector3(0, 0, 1);
-const euler = new THREE.Euler();
-const q0 = new THREE.Quaternion();
-const q1 = new THREE.Quaternion(
-  -Math.sqrt(0.5),
-  0,
-  0,
-  Math.sqrt(0.5)
-);
+      const euler = new THREE.Euler();
+      const q0 = new THREE.Quaternion();
+      const q1 = new THREE.Quaternion(
+        -Math.sqrt(0.5),
+        0,
+        0,
+        Math.sqrt(0.5)
+      );
 
-this._onDeviceOrientation = (event) => {
-  if (!this.motionEnabled) return;
+      this._onDeviceOrientation = (event) => {
+        if (!this.motionEnabled) return;
 
-  const alpha = THREE.MathUtils.degToRad(event.alpha || 0);
-  const beta  = THREE.MathUtils.degToRad(event.beta || 0);
-  const gamma = THREE.MathUtils.degToRad(event.gamma || 0);
+        const alpha = THREE.MathUtils.degToRad(event.alpha || 0);
+        const beta  = THREE.MathUtils.degToRad(event.beta || 0);
+        const gamma = THREE.MathUtils.degToRad(event.gamma || 0);
 
-  const orient = THREE.MathUtils.degToRad(
-    window.screen.orientation?.angle || window.orientation || 0
-  );
+        const orient = THREE.MathUtils.degToRad(
+          window.screen.orientation?.angle || window.orientation || 0
+        );
 
-  euler.set(beta, alpha, -gamma, 'YXZ');
+        euler.set(beta, alpha, -gamma, 'YXZ');
 
-  this.camera.quaternion.setFromEuler(euler);
-  this.camera.quaternion.multiply(q1);
-  this.camera.quaternion.multiply(
-    q0.setFromAxisAngle(zee, -orient)
-  );
-};
+        this.camera.quaternion.setFromEuler(euler);
+        this.camera.quaternion.multiply(q1);
+        this.camera.quaternion.multiply(
+          q0.setFromAxisAngle(zee, -orient)
+        );
+      };
   
       window.addEventListener('deviceorientation', this._onDeviceOrientation, true);
   
@@ -1287,7 +1077,6 @@ this._onDeviceOrientation = (event) => {
     this.renderFrame();
   }
 
-  // ---------- LIFECYCLE ----------
   dispose() {
     this.isActive = false;
     if (this.rafId) cancelAnimationFrame(this.rafId);
@@ -1319,18 +1108,19 @@ this._onDeviceOrientation = (event) => {
   }
   
   recenter() {
-  this.camera.position.set(0, 0, 0);
+    this.camera.position.set(0, 0, 0);
 
-  if (this.controls) {
-    this.controls.target.set(0, 0, -1);
-    this.controls.minDistance = 0.001;
-    this.controls.maxDistance = 0.001;
-    this.controls.enablePan = false;
-    this.controls.enableZoom = false;
-    this.controls.update();
+    if (this.controls) {
+      this.controls.target.set(0, 0, -1);
+      this.controls.minDistance = 0.001;
+      this.controls.maxDistance = 0.001;
+      this.controls.enablePan = false;
+      this.controls.enableZoom = false;
+      this.controls.update();
+    }
+
+    this.camera.near = 0.01;
+    this.camera.far = 3000;
+    this.camera.updateProjectionMatrix();
   }
-
-  this.camera.near = 0.01;
-  this.camera.far = 3000;
-  this.camera.updateProjectionMatrix();
-}}  
+}
