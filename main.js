@@ -300,7 +300,16 @@ function forceResize() {
       typeof currentVisualizer.enableMotionControls === 'function'
     ) {
       const enabled = await currentVisualizer.enableMotionControls();
-      btn.textContent = enabled ? 'Motion On' : 'Enable Motion';
+      
+      // Update text and toggle the blue active class
+      if (enabled) {
+        btn.textContent = 'Disable Motion';
+        btn.classList.add('active-toggle');
+      } else {
+        btn.textContent = 'Enable Motion';
+        btn.classList.remove('active-toggle');
+      }
+      
     } else {
       btn.textContent = 'Neural Sphere Only';
       setTimeout(() => {
